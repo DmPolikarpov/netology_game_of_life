@@ -7,13 +7,15 @@ void fillAllCells(int** allCells);
 void drawAllCells(int** arr, int rows, int columns);
 void drawCell(int** arr, int row, int column);
 bool calculateNewGeneration(int** arr, int rows, int columns);
+int getAliveCellNumber(int** arr, int rows, int columns);
 int getNumberOfAliveNeighbours(int** arr, int i, int j, int rows, int columns);
+int** copyArray(int** arr, int rows, int columns);
 void mainGameLoop(int** arr, int rows, int columns);
 void clearArr(int** arr, int rows);
 
 int main()
 {
-	int rows{10}, columns{10};
+	int rows{20}, columns{30};
 
 	int** allCells = createAllCells(rows, columns);
 
@@ -29,21 +31,34 @@ int main()
 void mainGameLoop(int** arr, int rows, int columns)
 {
 	bool isRunnig{ true };
-	int generation{};
+	int generation{1};
 	
-	while (isRunnig && generation < 7)
+	while (isRunnig && generation < 20)
 	{
-		generation++;
 
 		std::system("cls");
 
 		drawAllCells(arr, rows, columns);
 
-		std::cout << "Generation #" << generation << ". ";
+		int aliveCellsNumber = getAliveCellNumber(arr, rows, columns);
+
+		std::cout << "Generation #" << generation << ". Alive cells: " << aliveCellsNumber << std::endl;
 
 		isRunnig = calculateNewGeneration(arr, rows, columns);
 
-		Sleep(3000);
+		if (isRunnig)
+		{
+			generation++;
+			Sleep(2000);
+		} 
+		else if (getAliveCellNumber(arr, rows, columns))
+		{
+			std::cout << "The world is stagnated. Game over." << std::endl;
+		}
+		else 
+		{
+			std::cout << "All cells are dead. Game over." << std::endl;
+		}
 	}
 }
 
@@ -57,6 +72,26 @@ int** createAllCells(int rows, int columns)
 	}
 
 	return arr;
+}
+
+int** copyArray(int** arr, int rows, int columns)
+{
+	int** newArr = new int* [rows] {};
+
+	for (int index{}; index < rows; index++)
+	{
+		newArr[index] = new int[columns] {};
+	}
+
+	for (int i{}; i < rows; i++)
+	{
+		for (int j{}; j < columns; j++)
+		{
+			newArr[i][j] = arr[i][j];
+		}
+	}
+
+	return newArr;
 }
 
 void fillAllCells(int** arr)
@@ -76,30 +111,48 @@ void fillAllCells(int** arr)
 bool calculateNewGeneration(int** arr, int rows, int columns)
 {
 	bool isChanged{ false };
+
+	int** currGenArr = copyArray(arr, rows, columns);
+
 	for (int i{}; i < rows; i++)
 	{
 		for (int j{}; j < columns; j++)
 		{
 			// calculate number of alive neighbour cells
-			int aliveCells = getNumberOfAliveNeighbours(arr, i, j, rows, columns);
+			int aliveCells = getNumberOfAliveNeighbours(currGenArr, i, j, rows, columns);
 			// if number of alive neighbors equals 2
 			// life status of the cell won't be changed
-			if (aliveCells == 2) {
+			if (aliveCells == 3 && arr[i][j] == 0) {
+				arr[i][j] = 1;
+				isChanged = true;
+			}
+			if (arr[i][j] == 1 && (aliveCells == 2 || aliveCells == 3)) {
 				continue;
 				// if number of alive neighbors equals 3
 				// the cell will become alive
-			}
-			else if (aliveCells == 3 && arr[i][j] != 1) {
-				arr[i][j] = 1;
-				isChanged = true;
-				// otherwise it will die
-			} else if (arr[i][j] != 0) {
+			} else if (arr[i][j] != 0 && (aliveCells < 2 || aliveCells > 3)) {
 				arr[i][j] = 0;
 				isChanged = true;
 			}
 		}
 	}
+
+	clearArr(currGenArr, rows);
+
 	return isChanged;
+}
+
+int getAliveCellNumber(int** arr, int rows, int columns)
+{
+	int result{ };
+	for (int i{}; i < rows; i++)
+	{
+		for (int j{}; j < columns; j++)
+		{
+			result += arr[i][j];
+		}
+	}
+	return result;
 }
 
 int getNumberOfAliveNeighbours(int** arr, int i, int j, int rows, int columns)
